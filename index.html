@@ -3,6 +3,21 @@
 <head>
     <title>江湖遊戲</title>
 <style>
+    /* 遊戲視窗的基本樣式 */
+    #game-window {
+        max-width: 800px; /* 最大寬度 */
+        margin: 0 auto; /* 水平置中 */
+        padding: 20px;
+        border: 2px solid #ccc;
+    }
+
+    /* 響應式設定 */
+    @media screen and (max-width: 600px) {
+        /* 當螢幕寬度小於等於 600px 時的樣式 */
+        #game-window {
+            max-width: 90%;
+        }
+    }
     body {
         font-family: "Segoe UI", Arial, sans-serif;
         background-color: #f9f9f9;
@@ -90,6 +105,11 @@
 
 </head>
 <body>
+
+//響應式
+
+<div id="game-window">
+
     <div class="game-container">
         <h1>歡迎來到江湖</h1>
         <p>你正在一個神秘的江湖世界中冒險...</p>
@@ -118,7 +138,7 @@
         </div>
         <button onclick="clearLeaderboard()">重置排行榜</button>
     </div>
-
+</div>
 
     <script>
         let playerName = "";
