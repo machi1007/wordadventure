@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>江湖遊戲</title>
+<style>
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background-color: #f9f9f9;
+    }
+
+    .game-container {
+        width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        background-color: #fff;
+    }
+
+    h1 {
+        color: #9c27b0;
+        text-align: center;
+    }
+
+    p {
+        color: #333;
+    }
+
+    .status-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .chat-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        height: 150px;
+        overflow-y: auto;
+        background-color: #f5f5f5;
+    }
+
+    .game-options {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    button {
+        background-color: #9c27b0;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #7b1fa2;
+    }
+
+    #highest-exp,
+    #highest-coins {
+        margin-top: 20px;
+    }
+
+    #highest-exp h2,
+    #highest-coins h2 {
+        color: #9c27b0;
+    }
+
+    #highest-exp-list,
+    #highest-coins-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    #highest-exp-list li,
+    #highest-coins-list li {
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .game-options button {
+        margin-right: 10px;
+    }
+</style>
+
+</head>
+<body>
+    <div class="game-container">
+        <h1>歡迎來到江湖</h1>
+        <p>你正在一個神秘的江湖世界中冒險...</p>
+        <div class="status-bar">
+            <div>
+                <span>姓名： <span id="player-name"></span></span>
+                <span>生命： <span id="player-health"></span></span>
+                <span>金幣： <span id="player-coins"></span></span>
+                <span>經驗： <span id="player-exp"></span></span>
+            </div>
+            <button onclick="startGame()">開始遊戲</button>
+        <button onclick="restartGame()" id="restart-button" style="display: none;">重新開始</button>
+        </div>
+
+        <div class="chat-box" id="chat-box"></div>
+        <div class="game-options" id="game-options" style="display: none;">
+            <!-- 遊戲選項按鈕 -->
+        </div>
+<div id="highest-coins">
+    <h2>前五名金幣排行榜</h2>
+    <ol id="highest-coins-list"></ol>
+</div>
+        <div id="highest-exp">
+            <h2>前五名經驗值排行榜</h2>
+            <ol id="highest-exp-list"></ol>
+        </div>
+        <button onclick="clearLeaderboard()">重置排行榜</button>
+    </div>
+
+
+    <script>
+        let playerName = "";
+        let playerHealth = 100;
+        let playerCoins = 0;
+        let playerExp = 0;
+        let monsterHealth = 50;
+        let chatLog = [];
+
+//新增選項記得更新這裡
+let availableOptions = ['treasure', 'fight', 'trap', 'friendlyMonster', 'secretCave', 'mysteriousLake', 'evilWitch', 'mountainBandits', 'mysteriousMerchant', 'ancientRuins', 'monsterAmbush', 'hauntedForest', 'poisonousSwamp', 'banditAmbush', 'cursedRelic', 'town', 'lostTemple', 'enchantedFountain', 'dragonEncounter', 'ancientSorcerer', 'wizardTower', 'goblinInvasion', 'abandonedMine', 'mysticGrove', 'pirateEncounter', 'treacherousDesert', 'unicornEncounter', 'fishingVillage', 'ghostShip',         'rainbowValley',
+        'guardianStatue',
+        'lostCompanion',
+        'enchantedForest',
+        'frozenCave',
+        'timeWarp',
+        'ancientScroll',
+        'elementalTrial',
+        'starfallMeteor',
+        'forbiddenTomb',
+  "darkCave",
+  "plagueVillage",
+  "demonPool",
+  "spiderCave",
+  "magicCurse",
+  "pollutedSpring",
+  "abyssCavern",
+  "illusionMaze",
+  "forbiddenMagic",
+];
+
+
+        function startGame() {
+            playerName = prompt("請輸入你的名字：");
+            if (playerName) {
+                document.getElementById("player-name").textContent = playerName;
+                document.getElementById("player-health").textContent = playerHealth;
+                document.getElementById("player-coins").textContent = playerCoins;
+                document.getElementById("player-exp").textContent = playerExp;
+
+                const welcomeMessage = `歡迎來到江湖，${playerName}！你的生命值為${playerHealth}，金幣數量為${playerCoins}，經驗值為${playerExp}。`;
+                addToChatLog(welcomeMessage);
+                document.getElementById("game-options").style.display = "block";
+                updateRandomOptions();
+            } else {
+                alert("請輸入你的名字！");
+            }
+
+            loadRecordsFromLocalStorage();
+            updateHighestExp(); // 更新最高經驗值排行榜
+            updateHighestCoins(); // 更新最高金幣數量排行榜
+        }
+
+//新增選項記得更新這裡
+function updateRandomOptions() {
+    const randomOptions = getRandomOptions();
+    const gameOptions = document.getElementById("game-options");
+    gameOptions.innerHTML = "<h2>選擇你的冒險：</h2>";
+    randomOptions.forEach(option => {
+        const button = document.createElement("button");
+        switch (option) {
+            case 'treasure':
+                button.textContent = "探險尋寶";
+                break;
+            case 'fight':
+                button.textContent = "與強盜戰鬥";
+                break;
+            case 'trap':
+                button.textContent = "掉進陷阱";
+                break;
+            case 'friendlyMonster':
+                button.textContent = "遇到友好的怪物";
+                break;
+            case 'secretCave':
+                button.textContent = "探索秘密洞穴";
+                break;
+            case 'mysteriousLake':
+                button.textContent = "神秘湖泊";
+                break;
+            case 'evilWitch':
+                button.textContent = "邪惡女巫";
+                break;
+            case 'mountainBandits':
+                button.textContent = "山賊突襲";
+                break;
+            case 'mysteriousMerchant':
+                button.textContent = "神秘商人";
+                break;
+            case 'ancientRuins':
+                button.textContent = "古老遺跡";
+                break;
+            case 'monsterAmbush':
+                button.textContent = "怪物伏擊";
+                break;
+            case 'hauntedForest':
+                button.textContent = "鬧鬼的森林";
+                break;
+            case 'poisonousSwamp':
+                button.textContent = "劇毒沼澤";
+                break;
+            case 'banditAmbush':
+                button.textContent = "山賊埋伏";
+                break;
+            case 'cursedRelic':
+                button.textContent = "詛咒遺物";
+                break;
+            case 'town':
+                button.textContent = "訪問城鎮";
+                break;
+            case 'lostTemple':
+                button.textContent = "失落神廟";
+                break;
+            case 'enchantedFountain':
+                button.textContent = "妖艷的泉水";
+                break;
+            case 'dragonEncounter':
+                button.textContent = "遭遇巨龍";
+                break;
+            case 'ancientSorcerer':
+                button.textContent = "古老巫師";
+                break;
+            case 'wizardTower':
+                button.textContent = "巫師塔";
+                break;
+            case 'goblinInvasion':
+                button.textContent = "哥布林入侵";
+                break;
+            case 'abandonedMine':
+                button.textContent = "廢棄礦坑";
+                break;
+            case 'mysticGrove':
+                button.textContent = "神秘樹林";
+                break;
+            case 'pirateEncounter':
+                button.textContent = "海盜遭遇";
+                break;
+            case 'treacherousDesert':
+                button.textContent = "危險的沙漠";
+                break;
+            case 'unicornEncounter':
+                button.textContent = "遭遇獨角獸";
+                break;
+            case 'fishingVillage':
+                button.textContent = "漁村";
+                break;
+            case 'ghostShip':
+                button.textContent = "鬼船";
+                break;
+                case 'rainbowValley':
+                    button.textContent = "彩虹山谷";
+                    break;
+                case 'guardianStatue':
+                    button.textContent = "守護者雕像";
+                    break;
+                case 'lostCompanion':
+                    button.textContent = "失落的同伴";
+                    break;
+                case 'enchantedForest':
+                    button.textContent = "妖精森林";
+                    break;
+                case 'frozenCave':
+                    button.textContent = "冰凍洞穴";
+                    break;
+                case 'timeWarp':
+                    button.textContent = "時間扭曲";
+                    break;
+                case 'ancientScroll':
+                    button.textContent = "古代卷軸";
+                    break;
+                case 'elementalTrial':
+                    button.textContent = "元素試煉";
+                    break;
+                case 'starfallMeteor':
+                    button.textContent = "流星雨";
+                    break;
+                case 'forbiddenTomb':
+                    button.textContent = "禁忌墓地";
+                    break;
+            case 'darkCave':
+                button.textContent = "黑暗洞窟";
+                break;
+            case 'plagueVillage':
+                button.textContent = "瘟疫村落";
+                break;
+            case 'demonPool':
+                button.textContent = "惡魔之池";
+                break;
+            case 'spiderCave':
+                button.textContent = "蜘蛛洞穴";
+                break;
+            case 'magicCurse':
+                button.textContent = "魔法詛咒";
+                break;
+            case 'pollutedSpring':
+                button.textContent = "污染泉水";
+                break;
+            case 'abyssCavern':
+                button.textContent = "深淵之穴";
+                break;
+            case 'illusionMaze':
+                button.textContent = "幻覺迷宮";
+                break;
+            case 'forbiddenMagic':
+                button.textContent = "禁忌魔法";
+                break;
+
+            default:
+                break;
+        }
+        button.onclick = () => chooseOption(option);
+        gameOptions.appendChild(button);
+    });
+}
+
+
+        function getRandomOptions() {
+            const randomOptions = [];
+            const availableOptionsCopy = [...availableOptions];
+            while (randomOptions.length < 2 && availableOptionsCopy.length > 0) {
+                const randomIndex = Math.floor(Math.random() * availableOptionsCopy.length);
+                const selectedOption = availableOptionsCopy.splice(randomIndex, 1)[0];
+                randomOptions.push(selectedOption);
+            }
+            return randomOptions;
+        }
+
+        function chooseOption(option) {
+            let message = "";
+            switch (option) {
+                case "treasure":
+                    message = "你選擇了探險尋寶，這是一個神秘的洞穴，你發現了寶藏！你獲得了100金幣和50經驗值！";
+                    playerCoins += 100;
+                    playerExp += 50;
+                    break;
+                case "fight":
+                    message = "你選擇了與強盜戰鬥，你遇到了一群強盜，你決定與他們戰鬥！";
+                    if (fight()) {
+                        message += "你成功擊敗了強盜，獲得了50金幣和20經驗值！";
+                        playerCoins += 50;
+                        playerExp += 20;
+                    } else {
+                        message += "你被強盜打敗了，失去了10生命值。";
+                        playerHealth -= 10;
+                    }
+                    break;
+                case "trap":
+                    message = "你選擇了掉進陷阱，你掉進了陷阱，受到了傷害！你失去了20生命值。";
+                    playerHealth -= 20;
+                    break;
+                case "friendlyMonster":
+                    message = "你選擇了遇到友好的怪物，這是一隻友好的怪物，它給了你一些治癒藥水。你的生命值恢復了30點。";
+                    playerHealth = Math.min(playerHealth + 30, 100);
+                    break;
+                case "secretCave":
+                    message = "你選擇了探索秘密洞穴，洞穴裡有一個古老的寶箱，你打開寶箱獲得了200金幣！";
+                    playerCoins += 200;
+                    break;
+                case "mysteriousLake":
+                    message = "你選擇了前往神秘湖泊，湖泊中有一位神秘的女子，她賜予你神秘的力量，你的經驗值增加了50點！";
+                    playerExp += 50;
+                    break;
+                case "evilWitch":
+                    message = "你選擇了尋找邪惡女巫，女巫試圖將你變成青蛙，但你成功逃脫，她丟失了一些金幣。你獲得了50金幣！";
+                    playerCoins += 50;
+                    break;
+                case "mountainBandits":
+                    message = "你選擇了山賊突襲，你在山賊的襲擊下奮力戰鬥，擊退了他們，你獲得了100金幣和30經驗值！";
+                    playerCoins += 100;
+                    playerExp += 30;
+                    break;
+                case "mysteriousMerchant":
+                    message = "你選擇了尋找神秘商人，商人給了你一個神奇的護身符，你的生命值增加了20點！";
+                    playerHealth = Math.min(playerHealth + 20, 100);
+                    break;
+                case "ancientRuins":
+                    message = "你選擇了古老遺跡，你在遺跡中發現了一本古代秘笈，你的經驗值增加了100點！";
+                    playerExp += 100;
+                    break;            case "monsterAmbush":
+                message = "你選擇了怪物伏擊，突然有一群怪物從四面八方包圍了你，你被重傷！失去了40生命值。";
+                playerHealth -= 40;
+                break;
+
+            case "hauntedForest":
+                message = "你選擇了鬧鬼的森林，這裡充滿詭異的氛圍，讓你感到不安，你失去了30生命值。";
+                playerHealth -= 30;
+                break;
+
+            case "poisonousSwamp":
+                message = "你選擇了劇毒沼澤，不小心踩中了毒液，你中毒了！失去了25生命值。";
+                playerHealth -= 25;
+                break;
+
+            case "banditAmbush":
+                message = "你選擇了山賊埋伏，山賊突然出現並攻擊了你，你失去了35生命值。";
+                playerHealth -= 35;
+                break;
+
+            case "cursedRelic":
+                message = "你選擇了詛咒遺物，你發現了一個看似有著神秘力量的遺物，但它對你造成了嚴重的傷害！失去了50生命值。";
+                playerHealth -= 50;
+                break;
+
+            case "town":
+                message = "你在城鎮的酒館休息，你的生命值增加了50點！";
+                playerHealth = Math.min(playerHealth + 50, 100);
+                break;
+
+        case "lostTemple":
+            message = "你選擇了失落神廟，你進入了一個古老的神廟，這裡充滿了寶藏！你獲得了150金幣和80經驗值！";
+            playerCoins += 150;
+            playerExp += 80;
+            break;
+
+        case "enchantedFountain":
+            message = "你選擇了妖艷的泉水，泉水中充滿了神奇的能量，你的生命值恢復了50點！";
+            playerHealth = Math.min(playerHealth + 50, 100);
+            break;
+
+        case "dragonEncounter":
+            message = "你選擇了遭遇巨龍，你遇到了一隻可怕的巨龍，你決定試著與它交朋友，它給了你一些金幣，你獲得了50金幣！";
+            playerCoins += 50;
+            break;
+
+        case "ancientSorcerer":
+            message = "你選擇了古老巫師，巫師給了你一個神秘的魔法卷軸，你的經驗值增加了30點！";
+            playerExp += 30;
+            break;
+
+        case "wizardTower":
+            message = "你選擇了巫師塔，你在塔中找到了一個寶箱，你獲得了100金幣！";
+            playerCoins += 100;
+            break;
+
+        case "goblinInvasion":
+            message = "你選擇了哥布林入侵，一大群哥布林正在襲擊你，你決定與他們戰鬥！";
+            if (fight()) {
+                message += "你成功擊退了哥布林，獲得了80金幣和40經驗值！";
+                playerCoins += 80;
+                playerExp += 40;
+            } else {
+                message += "你被哥布林擊敗了，失去了20生命值。";
+                playerHealth -= 20;
+            }
+            break;
+
+        case "abandonedMine":
+            message = "你選擇了廢棄礦坑，你在礦坑中找到了一些寶石，你獲得了250金幣！";
+            playerCoins += 250;
+            break;
+
+        case "mysticGrove":
+            message = "你選擇了神秘樹林，這裡充滿了神奇的生物，你的經驗值增加了60點！";
+            playerExp += 60;
+            break;
+
+        case "pirateEncounter":
+            message = "你選擇了海盜遭遇，海盜船上的海盜想搶劫你，你決定與他們戰鬥！";
+            if (fight()) {
+                message += "你成功擊退了海盜，獲得了120金幣和60經驗值！";
+                playerCoins += 120;
+                playerExp += 60;
+            } else {
+                message += "你被海盜擊敗了，失去了30生命值。";
+                playerHealth -= 30;
+            }
+            break;
+
+        case "treacherousDesert":
+            message = "你選擇了危險的沙漠，你在沙漠中找到了一個藏寶地點，你獲得了180金幣！";
+            playerCoins += 180;
+            break;
+
+        case "unicornEncounter":
+            message = "你選擇了遭遇獨角獸，你遇到了一隻神秘的獨角獸，它給了你一個神奇的護身符，你的生命值增加了40點！";
+            playerHealth = Math.min(playerHealth + 40, 100);
+            break;
+
+        case "fishingVillage":
+            message = "你選擇了漁村，漁村的居民非常友好，他們給了你一些魚，你的生命值恢復了25點。";
+            playerHealth = Math.min(playerHealth + 25, 100);
+            break;
+
+        case "ghostShip":
+            message = "你選擇了鬼船，你登上了一艘幽靈船，你在船上發現了一些金幣，你獲得了70金幣！";
+            playerCoins += 70;
+            break;
+
+            case "rainbowValley":
+                message = "你選擇了彩虹山谷，這是一個美麗的地方，你的經驗值增加了80點！";
+                playerExp += 80;
+                break;
+            case "guardianStatue":
+                message = "你選擇了守護者雕像，你在雕像前獲得了庇護，你的生命值恢復了40點！";
+                playerHealth = Math.min(playerHealth + 40, 100);
+                break;
+            case "lostCompanion":
+                message = "你選擇了失落的同伴，你在江湖中找到了你失散已久的夥伴，他給了你一些金幣，你獲得了70金幣！";
+                playerCoins += 70;
+                break;
+            case "enchantedForest":
+                message = "你選擇了妖精森林，這裡充滿了魔法的氣息，你的經驗值增加了60點！";
+                playerExp += 60;
+                break;
+            case "frozenCave":
+                message = "你選擇了冰凍洞穴，你在洞穴中發現了一個寶箱，你獲得了150金幣！";
+                playerCoins += 150;
+                break;
+            case "timeWarp":
+                message = "你選擇了時間扭曲，你穿越了時空，經歷了一場奇幻冒險，你的經驗值增加了100點！";
+                playerExp += 100;
+                break;
+            case "ancientScroll":
+                message = "你選擇了古代卷軸，卷軸中記載著神秘的知識，你的經驗值增加了120點！";
+                playerExp += 120;
+                break;
+            case "elementalTrial":
+                message = "你選擇了元素試煉，你面臨了四大元素的考驗，你成功通過試煉，獲得了200金幣和150經驗值！";
+                playerCoins += 200;
+                playerExp += 150;
+                break;
+            case "starfallMeteor":
+                message = "你選擇了流星雨，一場星辰坠落的奇觀出現在天際，你獲得了50金幣和50經驗值！";
+                playerCoins += 50;
+                playerExp += 50;
+                break;
+            case "forbiddenTomb":
+                message = "你選擇了禁忌墓地，這裡充滿了危險，但你在墓地中發現了一個神祕寶箱，你獲得了300金幣！";
+                playerCoins += 300;
+                break;
+    case "darkCave":
+      message = "你選擇了黑暗洞窟，被蝙蝠襲擊，失去了15生命值。";
+      playerHealth -= 15;
+      break;
+
+    case "plagueVillage":
+      message = "你選擇了瘟疫村落，你被感染了，失去了25生命值。";
+      playerHealth -= 25;
+      break;
+
+    case "demonPool":
+      message = "你選擇了惡魔之池，池水裡有一隻惡魔，它對你進行了詛咒，你失去了30生命值。";
+      playerHealth -= 30;
+      break;
+
+    case "spiderCave":
+      message = "你選擇了蜘蛛洞穴，被毒蜘蛛咬傷，失去了20生命值。";
+      playerHealth -= 20;
+      break;
+
+    case "magicCurse":
+      message = "你選擇了魔法詛咒，你的生命值減少了35點。";
+      playerHealth -= 35;
+      break;
+
+    case "pollutedSpring":
+      message = "你選擇了污染泉水，受到毒害，失去了25生命值。";
+      playerHealth -= 25;
+      break;
+
+    case "abyssCavern":
+      message = "你選擇了深淵之穴，受到重傷，失去了40生命值。";
+      playerHealth -= 40;
+      break;
+
+    case "illusionMaze":
+      message = "你選擇了幻覺迷宮，受到幻覺的影響，失去了30生命值。";
+      playerHealth -= 30;
+      break;
+
+    case "forbiddenMagic":
+      message = "你選擇了禁忌魔法，受到嚴重傷害，失去了50生命值。";
+      playerHealth -= 50;
+      break;
+
+                default:
+                    message = "請選擇有效的選項！";
+            }
+            message += `你的生命值現在是${playerHealth}，金幣數量是${playerCoins}，經驗值是${playerExp}。`;
+            addToChatLog(message);
+
+            if (playerHealth <= 0) {
+                endGame();
+            }
+        updateStatus(); // 更新狀態欄
+        updateRandomOptions();
+        }
+
+
+    function updateStatus() {
+        document.getElementById("player-health").textContent = playerHealth;
+        document.getElementById("player-coins").textContent = playerCoins;
+        document.getElementById("player-exp").textContent = playerExp;
+    }
+
+        function fight() {
+            while (playerHealth > 0 && monsterHealth > 0) {
+                // 玩家攻擊
+                const playerAttack = Math.floor(Math.random() * 10) + 1;
+                monsterHealth -= playerAttack;
+                // 怪物攻擊
+                const monsterAttack = Math.floor(Math.random() * 10) + 1;
+                playerHealth -= monsterAttack;
+            }
+            return playerHealth > 0;
+        }
+
+        function restartGame() {
+            playerHealth = 100;
+            playerCoins = 0;
+            playerExp = 0;
+            monsterHealth = 50;
+            document.getElementById("restart-button").style.display = "none";
+            addToChatLog("遊戲重新開始！");
+            startGame();
+        }
+
+        function addToChatLog(message) {
+            chatLog.push(message);
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML = chatLog.join("<br>");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    let highestExpRecords = [];
+    let highestCoinsRecords = [];
+        // 讀取本地存儲的排行榜資料，如果有的話
+        const storedHighestExp = localStorage.getItem('highestExpRecords');
+        const storedHighestCoins = localStorage.getItem('highestCoinsRecords');
+
+        highestExpRecords = storedHighestExp ? JSON.parse(storedHighestExp) : [];
+        highestCoinsRecords = storedHighestCoins ? JSON.parse(storedHighestCoins) : [];
+
+    function endGame() {
+        document.getElementById("game-options").style.display = "none";
+        document.getElementById("restart-button").style.display = "block";
+        addToChatLog("你已經失敗了！遊戲結束。");
+
+        // 檢查是否創造了最高經驗值紀錄
+        if (playerExp > 0) {
+            highestExpRecords.push({ name: playerName, exp: playerExp });
+            highestExpRecords.sort((a, b) => b.exp - a.exp);
+            highestExpRecords = highestExpRecords.slice(0, 5); // 只保留前五名
+            updateHighestExp();
+        }
+
+        // 檢查是否創造了最高金幣數量紀錄
+        if (playerCoins > 0) {
+            highestCoinsRecords.push({ name: playerName, coins: playerCoins });
+            highestCoinsRecords.sort((a, b) => b.coins - a.coins);
+            highestCoinsRecords = highestCoinsRecords.slice(0, 5); // 只保留前五名
+            updateHighestCoins();
+        }
+
+        saveRecordsToLocalStorage();
+           // 將排行榜資料保存到本地存儲中
+            localStorage.setItem('highestExpRecords', JSON.stringify(highestExpRecords));
+            localStorage.setItem('highestCoinsRecords', JSON.stringify(highestCoinsRecords));
+    }
+        function clearLeaderboard() {
+            highestExpRecords = [];
+            highestCoinsRecords = [];
+            updateHighestExp();
+            updateHighestCoins();
+
+            // 清除本地存儲中的排行榜資料
+            localStorage.removeItem('highestExpRecords');
+            localStorage.removeItem('highestCoinsRecords');
+        }
+
+    function updateHighestExp() {
+        const highestExpList = document.getElementById("highest-exp-list");
+        highestExpList.innerHTML = ""; // 清空列表內容
+
+        highestExpRecords.forEach((record) => {
+            if (record.exp > 0) {
+                const listItem = document.createElement("li");
+                listItem.textContent = `姓名: ${record.name}，經驗值: ${record.exp}`;
+                highestExpList.appendChild(listItem);
+            }
+        });
+    }
+
+    function updateHighestCoins() {
+        const highestCoinsList = document.getElementById("highest-coins-list");
+        highestCoinsList.innerHTML = ""; // 清空列表內容
+
+        highestCoinsRecords.forEach((record) => {
+            if (record.coins > 0) {
+                const listItem = document.createElement("li");
+                listItem.textContent = `姓名: ${record.name}，金幣數量: ${record.coins}`;
+                highestCoinsList.appendChild(listItem);
+            }
+        });
+    }
+
+function saveRecordsToLocalStorage() {
+    localStorage.setItem("highestExpRecords", JSON.stringify(highestExpRecords));
+    localStorage.setItem("highestCoinsRecords", JSON.stringify(highestCoinsRecords));
+}
+
+function loadRecordsFromLocalStorage() {
+    const highestExpRecordsFromStorage = localStorage.getItem("highestExpRecords");
+    const highestCoinsRecordsFromStorage = localStorage.getItem("highestCoinsRecords");
+    if (highestExpRecordsFromStorage) {
+        highestExpRecords = JSON.parse(highestExpRecordsFromStorage);
+    }
+    if (highestCoinsRecordsFromStorage) {
+        highestCoinsRecords = JSON.parse(highestCoinsRecordsFromStorage);
+    }
+}
+
+    </script>
+</body>
+</html>
